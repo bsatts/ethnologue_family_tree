@@ -23,10 +23,13 @@ def scrape_item_list(node, cur_path, checkFormatting, unclassified):
     try:
         if node is not None:
             temp = node.find("div", class_ = "item-list")
+            temp1 = node.find_all("div", class_ = "item-list", recursive = False)
+            # Handle temp1
             pattern = re.compile("^\d+$")
             cur_path_check = re.match(pattern, cur_path) 
             global irregular_parse
             global tot_order
+            tot_l = 0
             if temp is None:
                 #In the last level
                 #Check if it has any languages in it
@@ -48,6 +51,13 @@ def scrape_item_list(node, cur_path, checkFormatting, unclassified):
                         scrape_item_list(li, cur_path + str(l+1), False, unclassified)
                     else:
                         scrape_item_list(li, cur_path + "." + str(l+1), False, unclassified)
+                tot_l = len(li_list)
+
+            #Handle temp1
+            if (len(temp1) != 0) and (temp1[0] != temp):
+                li_list = temp1[0].ul.find_all("li", recursive = False)
+                for l1, li in enumerate(li_list):
+                    scrape_item_list(li, cur_path + "." + str(tot_l + l1), False, unclassified)
     except:
         logger.exception("Something went wrong")
         pass
@@ -93,6 +103,8 @@ def scrape():
                 logger.info("The page {} was improperly formatted".format(subgrp_url))
             
             content_box = subgrp_soup.find("div", class_="view-content indent1")
+            if content_box is None:
+                content_box = subgrp_soup.find("div", class_="view-content indent0")
             logger.info("Starting content_box scraping for page {}".format(subgrp_url))
             scrape_item_list(content_box, str(top_level_count), False, unclassified)
             logger.info("Finished content_box scraping page {}".format(subgrp_url))
